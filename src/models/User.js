@@ -26,6 +26,28 @@ const UserSchema = new mongoose.Schema(
     password_hash: {
       type: String,
     },
+    instituicao: {
+      type: String,
+    },
+    departamento: {
+      type: String,
+    },
+    cargo: {
+      type: String,
+      enum: ['Magistério Superior', 'EBTT'], 
+    },
+    curso: {
+      type: String,
+    },
+    lattes: {
+      type: String,
+    },
+    bio: {
+      type: String,
+    },
+    foto_url: {
+      type: String,
+    },
     admin: {
       type: Boolean,
       default: false,

@@ -2,6 +2,7 @@ import * as Yup from "yup";
 import User from "../models/User";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import Mail from "../lib/Mail";
 
 class UserController {
@@ -92,9 +93,64 @@ class UserController {
 
     await user.save();
 
+    const { id, name, email } = user;
+
     return res.json({
-      message: "Conta ativada com sucesso! Você já pode fazer login.",
+      user: { id, name, email },
+      token: jwt.sign({ id }, "SISTEMA_WOLF_SECRET", {
+        expiresIn: "7d",
+      }),
     });
+  }
+
+  async show(req, res) {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    const { id, name, email, cpf, instituicao, campus, cargo, lotacao, bio } =
+      user;
+
+    return res.json({
+      id,
+      name,
+      email,
+      cpf,
+      instituicao,
+      campus,
+      cargo,
+      lotacao,
+      bio,
+    });
+  }
+
+  async update(req, res) {
+    const schema = Yup.object().shape({
+      instituicao: Yup.string().required(),
+      departamento: Yup.string().required(),
+      cargo: Yup.string().oneOf(["Magistério Superior", "EBTT"]).required(),
+      curso: Yup.string().required(),
+      bio: Yup.string().max(200),
+      lattes: Yup.string(),
+    });
+
+    try {
+      await schema.validate(req.body, { abortEarly: false });
+    } catch (err) {
+      return res.status(400).json({ error: err.errors });
+    }
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    const updatedUser = await user.updateOne(req.body);
+
+    return res.json({ message: "Perfil atualizado com sucesso!" });
   }
 }
 
