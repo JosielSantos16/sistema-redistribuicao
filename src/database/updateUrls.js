@@ -13,7 +13,7 @@ async function atualizarUrls() {
   console.log("=== [WOLF BOT] CORRIGINDO URLs DO TCC ===");
   
   for (const inst of dados) {
-    // Só atualiza se o campo url_progep no JSON existir
+    
     if (inst.url_progep) { 
       await Institution.updateOne(
         { sigla: inst.sigla },

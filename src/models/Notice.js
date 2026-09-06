@@ -5,7 +5,7 @@ const NoticeSchema = new mongoose.Schema(
     id_origem: {
       type: String,
       required: true,
-      unique: true, 
+      unique: true,
     },
     titulo: {
       type: String,
@@ -19,6 +19,10 @@ const NoticeSchema = new mongoose.Schema(
       type: String,
       required: true,
       default: "UFOPA",
+    },
+    uf: {
+      type: String,
+      required: false,
     },
     orgao: {
       type: String,

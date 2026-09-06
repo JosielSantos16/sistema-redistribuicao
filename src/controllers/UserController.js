@@ -110,8 +110,19 @@ class UserController {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    const { id, name, email, cpf, instituicao, campus, cargo, lotacao, bio } =
-      user;
+    const {
+      id,
+      name,
+      email,
+      cpf,
+      instituicao,
+      campus,
+      cargo,
+      lotacao,
+      bio,
+      interesse_redistribuicao,
+      estado_destino,
+    } = user;
 
     return res.json({
       id,
@@ -123,6 +134,8 @@ class UserController {
       cargo,
       lotacao,
       bio,
+      interesse_redistribuicao,
+      estado_destino,
     });
   }
 
@@ -134,6 +147,11 @@ class UserController {
       curso: Yup.string().required(),
       bio: Yup.string().max(200),
       lattes: Yup.string(),
+      interesse_redistribuicao: Yup.boolean(),
+      estado_destino: Yup.string().length(2).when("interesse_redistribuicao", {
+        is: true,
+        then: (s) => s.required("Informe o estado de destino desejado."),
+      }),
     });
 
     try {

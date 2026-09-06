@@ -48,6 +48,19 @@ const UserSchema = new mongoose.Schema(
     foto_url: {
       type: String,
     },
+    // NOVO — necessário para o Mapa de Interesse por Estado e para a Busca
+    // de Perfis (match): sem isso não existe dado real pra essas telas.
+    interesse_redistribuicao: {
+      type: Boolean,
+      default: false,
+    },
+    // Sigla do estado (UF) para onde o usuário deseja ser redistribuído/removido.
+    estado_destino: {
+      type: String,
+      uppercase: true,
+      minlength: 2,
+      maxlength: 2,
+    },
     admin: {
       type: Boolean,
       default: false,
