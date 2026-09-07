@@ -122,6 +122,8 @@ class UserController {
       bio,
       interesse_redistribuicao,
       estado_destino,
+      comprovante_url,
+      foto_url,
     } = user;
 
     return res.json({
@@ -136,10 +138,21 @@ class UserController {
       bio,
       interesse_redistribuicao,
       estado_destino,
+      comprovante_url,
+      foto_url,
     });
   }
 
   async update(req, res) {
+    const interesseBooleano =
+      req.body.interesse_redistribuicao === true ||
+      req.body.interesse_redistribuicao === "true";
+
+    const payload = {
+      ...req.body,
+      interesse_redistribuicao: interesseBooleano,
+    };
+
     const schema = Yup.object().shape({
       instituicao: Yup.string().required(),
       departamento: Yup.string().required(),
@@ -155,7 +168,7 @@ class UserController {
     });
 
     try {
-      await schema.validate(req.body, { abortEarly: false });
+      await schema.validate(payload, { abortEarly: false });
     } catch (err) {
       return res.status(400).json({ error: err.errors });
     }
@@ -166,9 +179,31 @@ class UserController {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    const updatedUser = await user.updateOne(req.body);
+
+    if (req.file) {
+      payload.comprovante_url = `/uploads/comprovantes/${req.file.filename}`;
+    }
+
+    await user.updateOne(payload);
 
     return res.json({ message: "Perfil atualizado com sucesso!" });
+  }
+
+  async updateFoto(req, res) {
+    if (!req.file) {
+      return res.status(400).json({ error: "Nenhuma imagem enviada." });
+    }
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    const foto_url = `/uploads/avatares/${req.file.filename}`;
+    await user.updateOne({ foto_url });
+
+    return res.json({ foto_url });
   }
 }
 

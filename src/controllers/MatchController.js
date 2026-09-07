@@ -1,6 +1,6 @@
 import User from "../models/User";
+import Institution from "../models/Institution";
 
-// Mascara o email pra exibição pública, ex: joao@email.com -> j****@email.com
 function mascararEmail(email) {
   if (!email) return "";
   const [usuario, dominio] = email.split("@");
@@ -10,33 +10,53 @@ function mascararEmail(email) {
 }
 
 class MatchController {
-  // GET /perfis/buscar?instituicao=UFOPA&cargo=EBTT&estado=SP
-  // Busca reais no banco: usuários ativos com interesse de redistribuição
-  // declarado, filtrados pelos critérios informados (todos opcionais).
   async index(req, res) {
     try {
-      const { instituicao, cargo, estado } = req.query;
+      const { instituicao, cargo, estado, pagina, limite } = req.query;
       const filtro = { active: true, interesse_redistribuicao: true };
 
       if (instituicao) filtro.instituicao = instituicao.toUpperCase();
       if (cargo) filtro.cargo = cargo;
       if (estado) filtro.estado_destino = estado.toUpperCase();
+      if (req.userId) filtro._id = { $ne: req.userId };
 
-      const usuarios = await User.find(filtro).limit(50);
+      const paginaAtual = Math.max(parseInt(pagina, 10) || 1, 1);
+      const porPagina = Math.min(Math.max(parseInt(limite, 10) || 12, 1), 50);
+
+      const total = await User.countDocuments(filtro);
+
+      const usuarios = await User.find(filtro)
+        .sort({ createdAt: -1 })
+        .skip((paginaAtual - 1) * porPagina)
+        .limit(porPagina);
+
+      const siglas = [...new Set(usuarios.map((u) => u.instituicao).filter(Boolean))];
+      const instituicoes = await Institution.find({ sigla: { $in: siglas } });
+      const ufPorSigla = {};
+      instituicoes.forEach((inst) => {
+        ufPorSigla[inst.sigla] = inst.uf;
+      });
 
       const resultados = usuarios.map((u) => ({
         id: u._id,
         nome: u.name,
         email: mascararEmail(u.email),
-        origem: u.instituicao,
+        instituicao: u.instituicao,
         cargo: u.cargo,
         curso: u.curso,
         lattes: u.lattes,
+        origem: ufPorSigla[u.instituicao] || null,
         destino: u.estado_destino,
         criadoEm: u.createdAt,
+        foto_url: u.foto_url,
       }));
 
-      return res.json(resultados);
+      return res.json({
+        resultados,
+        total,
+        pagina: paginaAtual,
+        totalPaginas: Math.max(Math.ceil(total / porPagina), 1),
+      });
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar perfis." });
     }
