@@ -96,6 +96,8 @@ class ScraperService {
           return; 
         }
 
+        if (link.endsWith("#") || link === url) return;
+
         const idOrigemUnico = Buffer.from(link).toString("base64").substring(0, 24);
 
         promises.push(

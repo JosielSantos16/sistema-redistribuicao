@@ -1,5 +1,6 @@
 import User from "../models/User";
 import Institution from "../models/Institution";
+import Match from "../models/Match";
 
 function mascararEmail(email) {
   if (!email) return "";
@@ -37,6 +38,25 @@ class MatchController {
         ufPorSigla[inst.sigla] = inst.uf;
       });
 
+      const idsResultado = usuarios.map((u) => u._id);
+      const matchesExistentes = req.userId
+        ? await Match.find({
+            $or: [
+              { solicitante: req.userId, destinatario: { $in: idsResultado } },
+              { solicitante: { $in: idsResultado }, destinatario: req.userId },
+            ],
+          })
+        : [];
+
+      const statusPorUsuario = {};
+      matchesExistentes.forEach((m) => {
+        const outroId =
+          String(m.solicitante) === String(req.userId)
+            ? String(m.destinatario)
+            : String(m.solicitante);
+        statusPorUsuario[outroId] = m.status;
+      });
+
       const resultados = usuarios.map((u) => ({
         id: u._id,
         nome: u.name,
@@ -49,6 +69,7 @@ class MatchController {
         destino: u.estado_destino,
         criadoEm: u.createdAt,
         foto_url: u.foto_url,
+        matchStatus: statusPorUsuario[String(u._id)] || null,
       }));
 
       return res.json({

@@ -18,7 +18,7 @@ class NoticeController {
 
   async index(req, res) {
     try {
-      const { instituicao, uf } = req.query;
+      const { instituicao, uf, pagina, limite } = req.query;
       const filtro = {};
 
       if (instituicao) {
@@ -33,8 +33,22 @@ class NoticeController {
         filtro.uf = uf.toUpperCase();
       }
 
-      const notices = await Notice.find(filtro).sort({ capturado_em: -1 }).limit(200);
-      return res.json(notices);
+      const paginaAtual = Math.max(parseInt(pagina, 10) || 1, 1);
+      const porPagina = Math.min(Math.max(parseInt(limite, 10) || 12, 1), 100);
+
+      const total = await Notice.countDocuments(filtro);
+
+      const notices = await Notice.find(filtro)
+        .sort({ capturado_em: -1 })
+        .skip((paginaAtual - 1) * porPagina)
+        .limit(porPagina);
+
+      return res.json({
+        editais: notices,
+        total,
+        pagina: paginaAtual,
+        totalPaginas: Math.max(Math.ceil(total / porPagina), 1),
+      });
     } catch (err) {
       return res.status(500).json({ error: 'Erro ao buscar editais.' });
     }
