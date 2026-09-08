@@ -45,6 +45,9 @@ const UserSchema = new mongoose.Schema(
     bio: {
       type: String,
     },
+    telefone: {
+      type: String,
+    },
     foto_url: {
       type: String,
     },
@@ -53,7 +56,19 @@ const UserSchema = new mongoose.Schema(
     },
     interesse_redistribuicao: {
       type: Boolean,
-      default: false,
+      default: true,
+    },
+    visivel_busca: {
+      type: Boolean,
+      default: true,
+    },
+    notificar_email_match: {
+      type: Boolean,
+      default: true,
+    },
+    notificar_email_edital: {
+      type: Boolean,
+      default: true,
     },
     estado_destino: {
       type: String,

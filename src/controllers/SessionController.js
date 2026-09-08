@@ -36,7 +36,7 @@ class SessionController {
 
     return res.json({
       user: { id, name, email },
-      token: jwt.sign({ id }, 'SISTEMA_WOLF_SECRET', {
+      token: jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: '7d',
       }),
     });

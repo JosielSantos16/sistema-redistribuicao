@@ -10,8 +10,8 @@ class Mail {
       port: 465,
       secure: true,
       auth: {
-        user: "josielufopa@gmail.com",
-        pass: "fogq lrfb rslk xqbw",
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
@@ -38,7 +38,7 @@ class Mail {
 
   sendMail(message) {
     return this.transporter.sendMail({
-      from: "Sistema Redistribuição <josielufopa@gmail.com>",
+      from: `Sistema Redistribuição <${process.env.EMAIL_USER}>`,
       ...message,
     });
   }

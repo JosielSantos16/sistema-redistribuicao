@@ -38,10 +38,17 @@ class NoticeController {
 
       const total = await Notice.countDocuments(filtro);
 
-      const notices = await Notice.find(filtro)
-        .sort({ capturado_em: -1 })
-        .skip((paginaAtual - 1) * porPagina)
-        .limit(porPagina);
+      const notices = await Notice.aggregate([
+        { $match: filtro },
+        {
+          $addFields: {
+            dataOrdenacao: { $ifNull: ["$data_publicacao", "$capturado_em"] },
+          },
+        },
+        { $sort: { dataOrdenacao: -1 } },
+        { $skip: (paginaAtual - 1) * porPagina },
+        { $limit: porPagina },
+      ]);
 
       return res.json({
         editais: notices,

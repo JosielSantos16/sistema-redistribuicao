@@ -1,31 +1,21 @@
-import multer from 'multer';
-import path from 'path';
-import crypto from 'crypto';
-import fs from 'fs';
-
-const uploadsDir = path.resolve(__dirname, '..', '..', 'uploads', 'comprovantes');
-
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "./cloudinary";
 
 export default {
-  storage: multer.diskStorage({
-    destination: uploadsDir,
-    filename: (req, file, cb) => {
-      crypto.randomBytes(16, (err, hash) => {
-        if (err) return cb(err);
-        const filename = `${hash.toString('hex')}-${Date.now()}${path.extname(file.originalname)}`;
-        cb(null, filename);
-      });
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
+      folder: "wolf/comprovantes",
+      resource_type: "auto", 
+      allowed_formats: ["pdf"],
     },
   }),
   limits: {
     fileSize: 5 * 1024 * 1024, 
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype !== 'application/pdf') {
-      return cb(new Error('Apenas arquivos PDF são permitidos.'));
+    if (file.mimetype !== "application/pdf") {
+      return cb(new Error("Apenas arquivos PDF são permitidos."));
     }
     cb(null, true);
   },

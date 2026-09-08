@@ -3,9 +3,6 @@ import User from "../models/User";
 import Mensagem from "../models/Mensagem";
 import Mail from "../lib/Mail";
 
-// Mascara o email pra exibição antes do match ser aceito — mesma lógica
-// usada no MatchController de busca, repetida aqui pra manter os
-// controllers independentes um do outro.
 function mascararEmail(email) {
   if (!email) return "";
   const [usuario, dominio] = email.split("@");
@@ -14,20 +11,17 @@ function mascararEmail(email) {
   return `${visivel}${"*".repeat(Math.max(usuario.length - 1, 3))}@${dominio}`;
 }
 
-async function enviarEmailSeguro(opcoes) {
+async function enviarEmailSeguro(opcoes, notificar = true) {
+  if (!notificar) return; 
   try {
     await Mail.sendMail(opcoes);
   } catch (err) {
-    // Falha de e-mail nunca deve quebrar a ação principal (criar/aceitar
-    // um match) — só loga e segue.
     console.error("Erro ao enviar e-mail de notificação de match:", err.message);
   }
 }
 
 class SolicitacaoController {
-  // POST /matches — cria um pedido de match. Se a outra pessoa já tinha
-  // pedido match pra você antes (e ainda está pendente), os dois pedidos
-  // são confirmados automaticamente — interesse já era mútuo.
+
   async store(req, res) {
     const { destinatario_id } = req.body;
 
@@ -53,9 +47,6 @@ class SolicitacaoController {
       return res.status(400).json({ error: "Você já enviou uma solicitação para esse perfil." });
     }
 
-    // Verifica se já existe um pedido no sentido contrário (a outra pessoa
-    // já tinha pedido match em você) — se sim, é interesse mútuo: confirma
-    // os dois de uma vez, sem precisar de um "aceitar" manual.
     const pedidoReverso = await Match.findOne({
       solicitante: destinatario_id,
       destinatario: req.userId,
@@ -65,9 +56,6 @@ class SolicitacaoController {
     const solicitante = await User.findById(req.userId);
 
     if (pedidoReverso) {
-      // Interesse mútuo: só atualiza o pedido que já existia (na direção
-      // contrária) pra "aceito" — NÃO cria um segundo registro pro mesmo
-      // par de pessoas, senão apareceria duplicado na lista de confirmados.
       pedidoReverso.status = "aceito";
       await pedidoReverso.save();
 
@@ -76,13 +64,13 @@ class SolicitacaoController {
         subject: "Você tem um novo match! - Sistema WOLF",
         template: "match_aceito",
         context: { nome: destinatario.name, outroNome: solicitante.name, outroEmail: solicitante.email },
-      });
+      }, destinatario.notificar_email_match !== false);
       await enviarEmailSeguro({
         to: `${solicitante.name} <${solicitante.email}>`,
         subject: "Você tem um novo match! - Sistema WOLF",
         template: "match_aceito",
         context: { nome: solicitante.name, outroNome: destinatario.name, outroEmail: destinatario.email },
-      });
+      }, solicitante.notificar_email_match !== false);
 
       return res.status(201).json({ status: "aceito", match: pedidoReverso });
     }
@@ -98,13 +86,11 @@ class SolicitacaoController {
       subject: "Alguém tem interesse em você no Sistema WOLF",
       template: "match_recebido",
       context: { nome: destinatario.name },
-    });
+    }, destinatario.notificar_email_match !== false);
 
     return res.status(201).json({ status: "pendente", match: novoPedido });
   }
 
-  // GET /matches/recebidos — pedidos pendentes que outras pessoas te
-  // mandaram. Não mostra o email ainda (só depois de aceitar).
   async recebidos(req, res) {
     const pedidos = await Match.find({
       destinatario: req.userId,
@@ -127,8 +113,6 @@ class SolicitacaoController {
     return res.json(resultado);
   }
 
-  // GET /matches/confirmados — matches aceitos (de qualquer lado), com o
-  // contato real da outra pessoa liberado.
   async confirmados(req, res) {
     const matches = await Match.find({
       status: "aceito",
@@ -143,9 +127,6 @@ class SolicitacaoController {
         const souEuQueSolicitei = String(m.solicitante._id) === String(req.userId);
         const outraPessoa = souEuQueSolicitei ? m.destinatario : m.solicitante;
 
-        // Conta quantas mensagens dessa conversa a OUTRA pessoa mandou e
-        // você ainda não abriu — é o que mostra o indicador de "não lida"
-        // sem precisar abrir o chat pra descobrir.
         const naoLidas = await Mensagem.countDocuments({
           match: m._id,
           remetente: { $ne: req.userId },
@@ -170,8 +151,6 @@ class SolicitacaoController {
     return res.json(resultado);
   }
 
-  // GET /matches/enviados — pedidos que você mandou, com o status atual.
-  // Só mostra o email real da outra pessoa se já foi aceito.
   async enviados(req, res) {
     const pedidos = await Match.find({ solicitante: req.userId })
       .sort({ createdAt: -1 })
@@ -193,7 +172,6 @@ class SolicitacaoController {
     return res.json(resultado);
   }
 
-  // PUT /matches/:id/aceitar
   async aceitar(req, res) {
     const match = await Match.findById(req.params.id).populate("solicitante destinatario");
 
@@ -217,12 +195,11 @@ class SolicitacaoController {
         outroNome: match.destinatario.name,
         outroEmail: match.destinatario.email,
       },
-    });
+    }, match.solicitante.notificar_email_match !== false);
 
     return res.json({ message: "Match aceito com sucesso." });
   }
 
-  // PUT /matches/:id/recusar
   async recusar(req, res) {
     const match = await Match.findById(req.params.id).populate("solicitante destinatario");
 
@@ -242,7 +219,7 @@ class SolicitacaoController {
       subject: "Atualização sobre sua solicitação - Sistema WOLF",
       template: "match_recusado",
       context: { nome: match.solicitante.name },
-    });
+    }, match.solicitante.notificar_email_match !== false);
 
     return res.json({ message: "Solicitação recusada." });
   }

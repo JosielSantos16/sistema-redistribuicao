@@ -38,6 +38,10 @@ const NoticeSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    data_publicacao: {
+      type: Date,
+      required: false,
+    },
   },
   {
     timestamps: true,

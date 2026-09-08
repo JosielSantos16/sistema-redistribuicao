@@ -14,7 +14,8 @@ class MatchController {
   async index(req, res) {
     try {
       const { instituicao, cargo, estado, pagina, limite } = req.query;
-      const filtro = { active: true, interesse_redistribuicao: true };
+
+      const filtro = { active: true, interesse_redistribuicao: true, visivel_busca: { $ne: false } };
 
       if (instituicao) filtro.instituicao = instituicao.toUpperCase();
       if (cargo) filtro.cargo = cargo;

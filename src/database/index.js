@@ -6,8 +6,10 @@ class Database {
   }
 
   mongo() {
+    const mongoUrl = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/sistema-redistribuicao";
+
     this.mongoConnection = mongoose
-      .connect("mongodb://127.0.0.1:27017/sistema-redistribuicao")
+      .connect(mongoUrl)
       .then(() => console.log("MongoDB conectado com sucesso!"))
       .catch((err) => {
         console.log("Erro ao conectar no MongoDB:");

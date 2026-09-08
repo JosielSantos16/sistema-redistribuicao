@@ -1,9 +1,6 @@
 import Match from "../models/Match";
 import Mensagem from "../models/Mensagem";
 
-// Confirma que o usuário logado faz parte desse match E que ele já foi
-// aceito — sem isso, ninguém pode ler ou mandar mensagem numa conversa
-// que não é sua ou que ainda nem virou match de verdade.
 async function verificarAcesso(matchId, userId) {
   const match = await Match.findById(matchId);
   if (!match) return null;
@@ -17,15 +14,12 @@ async function verificarAcesso(matchId, userId) {
 }
 
 class MensagemController {
-  // GET /matches/:matchId/mensagens
   async index(req, res) {
     const match = await verificarAcesso(req.params.id, req.userId);
     if (!match) {
       return res.status(403).json({ error: "Você não tem acesso a essa conversa." });
     }
 
-    // Abrir a conversa marca como lida qualquer mensagem que a OUTRA
-    // pessoa mandou — é isso que faz o indicador de "não lida" sumir.
     await Mensagem.updateMany(
       { match: req.params.id, remetente: { $ne: req.userId }, lida: false },
       { $set: { lida: true } }
@@ -45,7 +39,6 @@ class MensagemController {
     );
   }
 
-  // POST /matches/:matchId/mensagens
   async store(req, res) {
     const match = await verificarAcesso(req.params.id, req.userId);
     if (!match) {
@@ -70,8 +63,7 @@ class MensagemController {
       criadoEm: mensagem.createdAt,
     });
   }
-  // DELETE /matches/:id/mensagens — apaga todo o histórico da conversa
-  // (o match em si continua existindo, só limpa as mensagens).
+
   async destroy(req, res) {
     const match = await verificarAcesso(req.params.id, req.userId);
     if (!match) {
