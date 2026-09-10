@@ -26,6 +26,7 @@ routes.get('/notices', NoticeController.index);
 routes.get('/mapa/interesse', MapaController.index);
 routes.post('/suporte', SuporteController.store);
 routes.post('/parcerias', ParceriaController.store);
+routes.get('/seed/instituicoes', SeedController.instituicoes);
 routes.get('/seed/usuarios-demo', SeedController.usuariosDemo);
 
 routes.use(authMiddleware);
