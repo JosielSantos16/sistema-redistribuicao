@@ -210,7 +210,6 @@ class UserController {
     return res.json({ foto_url });
   }
 
-  // NOVO — remove a foto de perfil (volta pro avatar padrão)
   async removerFoto(req, res) {
     const user = await User.findById(req.userId);
 
