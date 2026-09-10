@@ -157,6 +157,7 @@ class UserController {
     };
 
     const schema = Yup.object().shape({
+      name: Yup.string().trim().min(3, "O nome deve ter pelo menos 3 caracteres"),
       instituicao: Yup.string().required(),
       departamento: Yup.string().required(),
       cargo: Yup.string().oneOf(["Magistério Superior", "EBTT"]).required(),
@@ -179,13 +180,17 @@ class UserController {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
+    if (!payload.name) {
+      delete payload.name;
+    }
+
     if (req.file) {
       payload.comprovante_url = req.file.path;
     }
 
     await user.updateOne(payload);
 
-    return res.json({ message: "Perfil atualizado com sucesso!" });
+    return res.json({ message: "Perfil atualizado com sucesso!", name: payload.name || user.name });
   }
 
   async updateFoto(req, res) {
@@ -203,6 +208,19 @@ class UserController {
     await user.updateOne({ foto_url });
 
     return res.json({ foto_url });
+  }
+
+  // NOVO — remove a foto de perfil (volta pro avatar padrão)
+  async removerFoto(req, res) {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    await user.updateOne({ $unset: { foto_url: "" } });
+
+    return res.json({ message: "Foto removida com sucesso!" });
   }
 
   async updateSenha(req, res) {

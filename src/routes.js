@@ -38,6 +38,7 @@ routes.put('/profile/senha', UserController.updateSenha);
 routes.put('/profile/configuracoes', UserController.updateConfiguracoes);
 routes.get('/profile/exportar', UserController.exportarDados);
 routes.delete('/profile', UserController.excluirConta);
+routes.delete('/profile/foto', UserController.removerFoto);
 routes.get('/perfis/buscar', MatchController.index);
 
 routes.post('/matches', SolicitacaoController.store);
