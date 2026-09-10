@@ -18,7 +18,7 @@ const upload = multer(multerConfig);
 const uploadAvatar = multer(multerAvatarConfig);
 
 routes.post('/users', UserController.store);
-routes.put('/activate', UserController.activate);
+// routes.put('/activate', UserController.activate);
 routes.post('/sessions', SessionController.store);
 routes.post('/scraper/PROGEP', NoticeController.store); 
 routes.get('/notices', NoticeController.index);

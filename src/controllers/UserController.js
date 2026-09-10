@@ -5,7 +5,6 @@ import Mensagem from "../models/Mensagem";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import Mail from "../lib/Mail";
 
 class UserController {
   async store(req, res) {
@@ -14,7 +13,10 @@ class UserController {
       cpf: Yup.string().required(),
       email: Yup.string().email().required(),
       data_nascimento: Yup.date().required(),
-      admin: Yup.boolean(),
+      password: Yup.string()
+        .required("A senha é obrigatória.")
+        .min(8, "A senha deve ter no mínimo 8 caracteres.")
+        .matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, "A senha deve conter letras e números."),
     });
 
     try {
@@ -23,7 +25,7 @@ class UserController {
       return res.status(400).json({ error: err.errors });
     }
 
-    const { email, cpf } = req.body;
+    const { name, email, cpf, data_nascimento, password } = req.body;
 
     const userExists = await User.findOne({
       $or: [{ email }, { cpf }],
@@ -33,33 +35,24 @@ class UserController {
       return res.status(400).json({ error: "Usuário ou CPF já cadastrado." });
     }
 
-    const registration_token = crypto.randomBytes(20).toString("hex");
+    const password_hash = await bcrypt.hash(password, 8);
 
     const user = await User.create({
-      ...req.body,
-      registration_token,
-      active: false,
+      name,
+      email,
+      cpf,
+      data_nascimento,
+      password_hash,
+      active: true,
     });
-
-    try {
-      await Mail.sendMail({
-        to: `${user.name} <${user.email}>`,
-        subject: "Confirmação de Cadastro - Sistema Redistribuição",
-        template: "registration",
-        context: {
-          name: user.name,
-          token: registration_token,
-        },
-      });
-    } catch (err) {
-      console.log("Erro ao enviar e-mail:", err);
-    }
 
     return res.status(201).json({
       id: user.id,
       name: user.name,
       email: user.email,
-      registration_token,
+      token: jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+      }),
     });
   }
 
