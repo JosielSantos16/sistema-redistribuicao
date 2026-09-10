@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
-import Institution from '../models/Institution'; // Case-sensitive corrigido
+import Institution from '../models/Institution'; 
+import 'dotenv/config';
 
-const mongoURL = 'mongodb://localhost:27017/sistema-redistribuicao'; 
+const mongoURL = 'mongodb://localhost:27017/sistema-redistribuicao';
 
 const universidadesNacionais = [
   {

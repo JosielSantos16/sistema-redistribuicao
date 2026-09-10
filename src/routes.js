@@ -12,6 +12,7 @@ import ParceriaController from './controllers/ParceriaController';
 import authMiddleware from './middlewares/auth';
 import multerConfig from './config/multer';
 import multerAvatarConfig from './config/multerAvatar';
+import SeedController from './controllers/SeedController';
 
 const routes = new Router();
 const upload = multer(multerConfig);
@@ -25,6 +26,7 @@ routes.get('/notices', NoticeController.index);
 routes.get('/mapa/interesse', MapaController.index);
 routes.post('/suporte', SuporteController.store);
 routes.post('/parcerias', ParceriaController.store);
+routes.get('/seed/usuarios-demo', SeedController.usuariosDemo);
 
 routes.use(authMiddleware);
 

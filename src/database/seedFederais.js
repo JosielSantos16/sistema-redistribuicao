@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Institution from '../models/Institution';
+import 'dotenv/config';
 
 const mongoURL = 'mongodb://localhost:27017/sistema-redistribuicao';
 

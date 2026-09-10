@@ -1,12 +1,5 @@
-import 'dotenv/config';
-import dns from 'dns';
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import User from '../models/User';
-
-dns.setDefaultResultOrder('ipv4first');
-
-const mongoURL = process.env.MONGO_URL || 'mongodb://localhost:27017/sistema-redistribuicao';
+import bcrypt from "bcryptjs";
+import User from "../models/User";
 
 const usuariosDemo = [
   { name: "Ana Souza", cpf: "10000000001", email: "ana.souza@demo.wolf", instituicao: "UFOPA", departamento: "Ciência da Computação", cargo: "Magistério Superior", curso: "Sistemas de Informação", estado_destino: "SP", lattes: "http://lattes.cnpq.br/0000000000001", foto_url: "https://i.pravatar.cc/300?u=ana.souza@demo.wolf" },
@@ -31,47 +24,44 @@ const usuariosDemo = [
   { name: "Thiago Moreira", cpf: "10000000020", email: "thiago.moreira@demo.wolf", instituicao: "IFS", departamento: "Química", cargo: "EBTT", curso: "Técnico em Química", estado_destino: "SE", lattes: "http://lattes.cnpq.br/0000000000020", foto_url: "https://i.pravatar.cc/300?u=thiago.moreira@demo.wolf" },
 ];
 
-async function seedInteresses() {
-  try {
-    console.log("=== [WOLF BOT] SEED DE USUÁRIOS DE DEMONSTRAÇÃO (Mapa de Interesse) ===");
-    console.log(`Conectando em: ${mongoURL.replace(/:[^:@]+@/, ':****@')}`);
-    await mongoose.connect(mongoURL);
+class SeedController {
+  async usuariosDemo(req, res) {
+    try {
+      const senhaHash = await bcrypt.hash("Demo1234", 8);
+      let criados = 0;
+      let atualizados = 0;
 
-    const senhaHash = await bcrypt.hash("Demo1234", 8);
-    let criados = 0;
-    let atualizados = 0;
+      for (const u of usuariosDemo) {
+        const existente = await User.findOne({ email: u.email });
 
-    for (const u of usuariosDemo) {
-      const existente = await User.findOne({ email: u.email });
+        if (existente) {
+          await User.updateOne(
+            { email: u.email },
+            { $set: { lattes: u.lattes, foto_url: u.foto_url } }
+          );
+          atualizados++;
+          continue;
+        }
 
-      if (existente) {
-        await User.updateOne(
-          { email: u.email },
-          { $set: { lattes: u.lattes, foto_url: u.foto_url } }
-        );
-        atualizados++;
-        continue;
+        await User.create({
+          ...u,
+          data_nascimento: new Date("1990-01-01"),
+          password_hash: senhaHash,
+          interesse_redistribuicao: true,
+          active: true,
+        });
+        criados++;
       }
 
-      await User.create({
-        ...u,
-        data_nascimento: new Date("1990-01-01"),
-        password_hash: senhaHash,
-        interesse_redistribuicao: true,
-        active: true,
+      return res.json({
+        mensagem: "Seed de usuários demo executado com sucesso.",
+        criados,
+        atualizados,
       });
-      criados++;
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
     }
-
-    console.log(`[✓] ${criados} usuários de demonstração criados.`);
-    console.log(`[✓] ${atualizados} já existiam e tiveram lattes/foto atualizados.`);
-    console.log("Todos com senha 'Demo1234' (apenas para testes locais).");
-
-    process.exit(0);
-  } catch (error) {
-    console.error("Erro ao criar usuários de demonstração:", error.message);
-    process.exit(1);
   }
 }
 
-seedInteresses();
+export default new SeedController();
